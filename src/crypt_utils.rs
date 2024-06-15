@@ -8,12 +8,19 @@ use rsa::{RsaPrivateKey, RsaPublicKey};
 use serde::{Serialize, Deserialize};
 use bincode;
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub enum CompressionType {
+    None,
+    Brotli,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BinaryPacket {
     pub data: Vec<u8>,
+    pub is_encrypted: bool,
+    pub compression_type: CompressionType,
     aad: Vec<u8>,
     nonce: Option<Vec<u8>>,
-    pub is_encrypted: bool,
 }
 
 impl BinaryPacket {
@@ -24,9 +31,10 @@ impl BinaryPacket {
 
         Ok(BinaryPacket {
             data: raw_data,
+            is_encrypted: false,
+            compression_type: CompressionType::None,
             aad: aad,
             nonce: None,
-            is_encrypted: false,
         })
     }
 
@@ -221,17 +229,22 @@ pub mod compression_utils {
     use std::io::prelude::*;
     use anyhow::{anyhow, Result};
 
-    use super::BinaryPacket;
+    use super::{BinaryPacket, CompressionType};
 
     pub fn compress_brotli (packet: &mut BinaryPacket) -> Result<()> {
         if packet.is_encrypted {
             return Err(anyhow!("Error, compressing encrypted data is useless."));
         }
+        else if packet.compression_type != CompressionType::None {
+            return Err(anyhow!("Data is already compressed."));
+        }
+
         let mut encoder = CompressorWriter::new(Vec::new(), 4096, 11, 22);
         encoder.write_all(&packet.data)?;
         let compressed_data = encoder.into_inner();
         packet.data = compressed_data;
         packet.data.shrink_to_fit();
+        packet.compression_type = CompressionType::Brotli;
         Ok(())
     }
 
@@ -239,13 +252,16 @@ pub mod compression_utils {
         if packet.is_encrypted {
             return Err(anyhow!("Error, decrypt packet before decompressing"));
         }
+        else if packet.compression_type != CompressionType::Brotli {
+            return Err(anyhow!("Data is not brotli compressed."));
+        }
 
         let mut decompressed_data = Vec::new();
         let mut decompressor = Decompressor::new(packet.data.as_slice(), 4096_000);
         decompressor.read_to_end(&mut decompressed_data)?;
 
         packet.data = decompressed_data;
-
+        packet.compression_type = CompressionType::None;
 
         Ok(())
     }

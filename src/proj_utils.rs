@@ -5,10 +5,11 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use std::env::consts::OS;
+use serde::{Serialize, Deserialize};
 
 const LINUX_TYNKERBASE_PATH: &str = "/tynkerbase-projects";
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileData {
     filename: String,
     contents: Vec<u8>,
@@ -34,7 +35,7 @@ impl FileData {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileCollection {
     files: Vec<FileData>
 }
@@ -42,49 +43,6 @@ pub struct FileCollection {
 impl FileCollection {
     pub fn new() -> Self {
         FileCollection{files: vec![]}
-    }
-
-    pub fn from_bytes(mut vec: Vec<u8>) -> Result<Self> {
-        let mut res = FileCollection::new();
-
-        while vec.len() > 0 {
-            if vec.len() < 8 {
-                return Err(anyhow!("Invalid bytes"));
-            }
-
-            // get length of file binary contents
-            let mut d_len = [0_u8; 8];
-            d_len.copy_from_slice(&vec[vec.len()-8..vec.len()]);
-            let d_len = usize::from_be_bytes(d_len);
-            vec.truncate(vec.len()-8);
-            
-            // get file binary contents
-            let mut data = vec![];
-            data.copy_from_slice(&vec[vec.len()-d_len..vec.len()]);
-            vec.truncate(vec.len()-d_len);     
-
-            // get length of string
-            let mut s_len = [0_u8; 8];
-            s_len.copy_from_slice(&vec[vec.len()-8..vec.len()]);
-            let s_len = usize::from_be_bytes(s_len);
-            vec.truncate(vec.len()-8);
-    
-            // get string (check for decoding error)
-            let mut string = vec![];
-            string.copy_from_slice(&vec[vec.len()-d_len..vec.len()]);
-            vec.truncate(vec.len()-s_len);
-            let string = match String::from_utf8(string){
-                Ok(s) => s,
-                Err(e) => return Err(anyhow!("Error decoding string: {}", e)),
-            };
-
-            res.push(
-                FileData::from(string, data)
-            );
-
-        }
-
-        Ok(res)
     }
     
     pub fn save(self, output_dir: &str) -> Result<()> {
@@ -212,30 +170,6 @@ impl FileCollection {
 
     fn push(&mut self, elem: FileData) {
         self.files.push(elem);
-    }
-
-    pub fn to_bytes(self) -> Vec<u8> {
-        let mut res = vec![];
-
-        for file in self.files {
-            let (s, mut d) = file.extract();
-
-            // Add string as Vec<u8> to res and add the length of the string after
-            let mut s = s.as_bytes().to_vec();
-            let s_len = s.len();
-            res.append(&mut s);
-            let mut s_len = s_len.to_be_bytes().to_vec();
-            res.append(&mut s_len);
-
-            // Add file binary contents as Vec<u8> to res and add the length of the binary after
-            let d_len = d.len();
-            res.append(&mut d);
-            let mut d_len = d_len.to_be_bytes().to_vec();
-            res.append(&mut d_len);
-        }
-
-        res.shrink_to_fit();
-        res
     }
 }
 

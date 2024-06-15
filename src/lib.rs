@@ -10,12 +10,11 @@ mod tests {
     
     #[test]
     fn test_encryption_and_compression() {
-        let v = std::fs::read_to_string("./Cargo.lock")
-            .unwrap()
-            .as_bytes()
-            .to_vec();
+        let text = std::fs::read_to_string("./Cargo.lock")
+            .unwrap();
         
-        let mut packet = crypt_utils::BinaryPacket::from_bytes(v);
+        let mut packet = crypt_utils::BinaryPacket::from(&text)
+            .unwrap();
 
         compression_utils::compress_brotli(&mut packet)
             .expect("error");
@@ -35,7 +34,7 @@ mod tests {
         compression_utils::decompress_brotli(&mut packet)
             .unwrap();
 
-        let text = String::from_utf8(packet.data.clone()).unwrap();
+        let text: String = bincode::deserialize(&packet.data).unwrap();
         let s = format!("\n\nUnencrypted Data: {}\nSize: {}", &text, packet.mem_size());
         std::fs::write("./test-outputs/decrypted-data.txt", &s)
         .unwrap();
@@ -43,4 +42,5 @@ mod tests {
         assert!(text == std::fs::read_to_string("./Cargo.lock").unwrap());
 
     }
+
 }

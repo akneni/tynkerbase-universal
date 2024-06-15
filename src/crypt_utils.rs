@@ -5,8 +5,10 @@ use ring::rand::{SecureRandom, SystemRandom};
 use anyhow::{anyhow, Result};
 use rsa::pkcs1::EncodeRsaPublicKey;
 use rsa::{RsaPrivateKey, RsaPublicKey};
+use serde::{Serialize, Deserialize};
+use bincode;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BinaryPacket {
     pub data: Vec<u8>,
     aad: Vec<u8>,
@@ -15,27 +17,17 @@ pub struct BinaryPacket {
 }
 
 impl BinaryPacket {
-    pub fn from_str(s: &str) -> Self {
-        let plaintext = s.as_bytes().to_vec();
+    pub fn from<T: Sized + Serialize>(data: &T) -> Result<Self> {
         let aad = b"Insert easter egg here.".to_vec();
+        let raw_data = bincode::serialize(data)
+            .map_err(|e| anyhow!("{}", e))?;
 
-        BinaryPacket {
-            data: plaintext,
+        Ok(BinaryPacket {
+            data: raw_data,
             aad: aad,
             nonce: None,
             is_encrypted: false,
-        }
-    }
-
-    pub fn from_bytes(b: Vec<u8>) -> Self {
-        let aad = b"Insert easter egg here.".to_vec();
-
-        BinaryPacket {
-            data: b,
-            aad: aad,
-            nonce: None,
-            is_encrypted: false,
-        } 
+        })
     }
 
     pub fn mem_size(&self) -> usize {
@@ -47,23 +39,23 @@ impl BinaryPacket {
     }
 }
 
-pub struct AesEncryption {
+pub struct AesKeys {
     key: [u8; 32]
 }
 
-impl AesEncryption {
+impl AesKeys {
     pub fn new() -> Self {
         let rng = SystemRandom::new();
         let mut key = [0_u8; 32];
         rng.fill(&mut key);
         
-        AesEncryption{
+        AesKeys{
             key: key
         }
     }
 
     pub fn from (key: [u8; 32]) -> Self {
-        AesEncryption{
+        AesKeys{
             key: key
         }
     }
@@ -179,8 +171,8 @@ pub mod rsa_utils {
 
     use super::BinaryPacket;
 
-    pub const ENCRYPT_CHUNK_SIZE: usize = 245; // 2048 bits / 8 - 11 for PKCS1 padding
-    pub const DECRYPT_CHUNK_SIZE: usize = 256; // 2048 bits / 8
+    pub const ENCRYPT_CHUNK_SIZE: usize = 245;
+    pub const DECRYPT_CHUNK_SIZE: usize = 256;
 
     pub fn encrypt(packet: &mut BinaryPacket, key: &RsaPublicKey) -> Result<()> {
         if packet.is_encrypted {

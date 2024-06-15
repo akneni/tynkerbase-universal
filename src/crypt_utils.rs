@@ -13,7 +13,7 @@ pub struct BinaryPacket {
     pub data: Vec<u8>,
     aad: Vec<u8>,
     nonce: Option<Vec<u8>>,
-    is_encrypted: bool,
+    pub is_encrypted: bool,
 }
 
 impl BinaryPacket {

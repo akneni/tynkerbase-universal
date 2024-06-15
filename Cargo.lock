@@ -447,7 +447,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tynkerbase-universal"
+name = "tynkerbase_universal"
 version = "0.1.0"
 dependencies = [
  "anyhow",

@@ -1,6 +1,6 @@
-mod docker_utils;
-mod proj_utils;
-mod crypt_utils;
+pub mod docker_utils;
+pub mod proj_utils;
+pub mod crypt_utils;
 
 
 #[cfg(test)]

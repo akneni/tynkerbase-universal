@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::process::Command;
 use std::env::consts::OS;
 use anyhow::{anyhow, Result};

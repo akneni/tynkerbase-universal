@@ -8,7 +8,7 @@ mod tests {
     use crypt_utils::{compression_utils, rsa_utils};
     
     #[test]
-    fn test_encryption_and_compression() {
+    fn encryption_and_compression() {
         let text = std::fs::read_to_string("./Cargo.lock")
             .unwrap();
         
@@ -40,6 +40,13 @@ mod tests {
 
         assert!(text == std::fs::read_to_string("./Cargo.lock").unwrap());
 
+    }
+
+    #[test]
+    fn apikey_generation() {
+        let key = crypt_utils::gen_apikey();
+        assert!(key.starts_with("tyb_key_"));
+        assert!(key.len() > 64);
     }
 
 }

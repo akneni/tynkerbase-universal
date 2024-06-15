@@ -5,6 +5,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use anyhow::{anyhow, Result};
 use rsa::pkcs1::EncodeRsaPublicKey;
 use rsa::{RsaPrivateKey, RsaPublicKey};
+use rand::{Rng, thread_rng};
 use serde::{Serialize, Deserialize};
 use bincode;
 
@@ -19,6 +20,7 @@ pub struct BinaryPacket {
     pub data: Vec<u8>,
     pub is_encrypted: bool,
     pub compression_type: CompressionType,
+    api_key: Option<Vec<u8>>,
     aad: Vec<u8>,
     nonce: Option<Vec<u8>>,
 }
@@ -33,9 +35,43 @@ impl BinaryPacket {
             data: raw_data,
             is_encrypted: false,
             compression_type: CompressionType::None,
+            api_key: None,
             aad: aad,
             nonce: None,
         })
+    }
+
+    pub fn attach_key(&mut self, key: &str) -> Result<()> {
+        if self.is_encrypted {
+            return Err(anyhow!("Must attach key before encryption."));
+        }
+        else if self.api_key.is_some() {
+            return Err(anyhow!("An API key is already attached."));
+        }
+        else if !key.starts_with("tyb_key_") {
+            return Err(anyhow!("API key formatted incorrectly. It must start with `tyb_key_`"));
+        }
+
+        let key = key.to_string();
+        let key = bincode::serialize(&key)
+            .map_err(|e| anyhow!("{}", e))?;
+
+        self.api_key = Some(key);
+        Ok(())
+    }
+
+    pub fn get_apikey(&self) -> Result<String> {
+        if self.is_encrypted {
+            return Err(anyhow!("Must decrypt binary packet before extracting API key"));
+        }
+
+        if let Some(ref key) = self.api_key {
+            let res: String = bincode::deserialize(key)
+                .map_err(|e| anyhow!("{}", e))?;
+            return Ok(res);
+        } 
+
+        Err(anyhow!("API key doesn't exist"))
     }
 
     pub fn mem_size(&self) -> usize {
@@ -45,6 +81,20 @@ impl BinaryPacket {
         }
         size
     }
+}
+
+pub fn gen_apikey() -> String {
+    let mut rng = thread_rng();
+    let mut key = "tyb_key_".to_string();
+    let mut nums: Vec<u8> = vec![
+        (48..58).collect::<Vec<u8>>(),
+        (65..91).collect::<Vec<u8>>(),
+        (97..123).collect::<Vec<u8>>(),
+    ].concat();
+    for _ in 0..64 {
+        key.push(nums[rng.gen_range(0..nums.len())] as char);
+    }
+    key
 }
 
 pub struct AesKeys {
@@ -173,7 +223,7 @@ impl RsaKeys {
 }
 
 pub mod rsa_utils {
-    use rand::thread_rng;
+    use rand::{thread_rng, Rng};
     use rsa::{RsaPrivateKey, RsaPublicKey};
     use anyhow::{anyhow, Result};
 
@@ -197,6 +247,18 @@ pub mod rsa_utils {
         }
 
         packet.data = enc_data;
+
+        if let Some(ref api_key) = packet.api_key {
+            let mut enc_key: Vec<u8> = vec![];
+
+            for d in api_key.chunks(ENCRYPT_CHUNK_SIZE) {
+                let mut enc_buff = key.encrypt(&mut rng, rsa::Pkcs1v15Encrypt, d)
+                    .map_err(|e| anyhow!("{}", e))?;
+                enc_key.append(&mut enc_buff);
+            }
+            packet.api_key = Some(enc_key);
+        }
+
         packet.is_encrypted = true;
 
         Ok(())
@@ -216,13 +278,24 @@ pub mod rsa_utils {
         }
 
         packet.data = plaintext;
+
+        if let Some(ref api_key) = packet.api_key {
+            let mut plain_key: Vec<u8> = vec![];
+
+            for d in api_key.chunks(DECRYPT_CHUNK_SIZE) {
+                let mut dec_buffer = key.decrypt(rsa::Pkcs1v15Encrypt, d)
+                    .map_err(|e| anyhow!("Error decrypting chunk: {}", e))?;
+                plain_key.append(&mut dec_buffer);
+            }
+    
+            packet.api_key = Some(plain_key);
+        }
+
         packet.is_encrypted = false;
 
         Ok(())
     }
-
 }
-
 
 pub mod compression_utils {
     use brotli::{CompressorWriter, Decompressor};

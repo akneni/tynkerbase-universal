@@ -3,6 +3,11 @@ pub mod proj_utils;
 pub mod crypt_utils;
 
 
+pub fn ping() -> usize {
+    374
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

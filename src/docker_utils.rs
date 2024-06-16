@@ -83,7 +83,7 @@ fn install_docker() -> Result<()> {
     Ok(())
 }
 
-fn gen_image(path: &str, img_name: &str) -> Result<()> {
+fn build_image(path: &str, img_name: &str) -> Result<()> {
     let cmd = Command::new("docker")
         .args(["build", "-t", img_name, "."])
         .current_dir(path)

@@ -7,7 +7,7 @@ use anyhow::{anyhow, Result};
 use std::env::consts::OS;
 use serde::{Serialize, Deserialize};
 
-const LINUX_TYNKERBASE_PATH: &str = "/tynkerbase-projects";
+pub const LINUX_TYNKERBASE_PATH: &str = "/tynkerbase-projects";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileData {

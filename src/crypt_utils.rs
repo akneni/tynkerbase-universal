@@ -26,6 +26,19 @@ pub struct BinaryPacket {
 }
 
 impl BinaryPacket {
+    pub fn new () -> Self {
+        let aad = b"Insert easter egg here.".to_vec();
+
+        BinaryPacket {
+            data: vec![],
+            is_encrypted: false,
+            compression_type: CompressionType::None,
+            api_key: None,
+            aad: aad,
+            nonce: None,
+        }
+    }
+
     pub fn from<T: Sized + Serialize>(data: &T) -> Result<Self> {
         let aad = b"Insert easter egg here.".to_vec();
         let raw_data = bincode::serialize(data)
@@ -72,6 +85,10 @@ impl BinaryPacket {
         } 
 
         Err(anyhow!("API key doesn't exist"))
+    }
+
+    pub fn has_apikey(&self) -> bool {
+        self.api_key.is_some()
     }
 
     pub fn mem_size(&self) -> usize {

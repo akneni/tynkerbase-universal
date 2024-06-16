@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use std::process::Command;
+use std::{env::current_dir, process::Command};
 use std::env::consts::OS;
 use anyhow::{anyhow, Result};
 
@@ -80,5 +80,57 @@ pub fn get_engine_status() -> Result<bool> {
 
 fn install_docker() -> Result<()> {
     // TODO: implement this function for the apt and dnf package managers (or in an agnostic manner).
+    Ok(())
+}
+
+fn gen_image(path: &str, img_name: &str) -> Result<()> {
+    let cmd = Command::new("docker")
+        .args(["build", "-t", img_name, "."])
+        .current_dir(path)
+        .output();    
+
+    Ok(())
+}
+
+fn list_images() -> Result<Vec<String>> {
+    // TODO: Test this function
+    let cmd = Command::new("docker")
+        .arg("images")
+        .output()
+        .map_err(|e| anyhow!("{}", e))?;
+
+    let s = String::from_utf8(cmd.stdout)
+        .map_err(|e| anyhow!("{e}"))?;
+
+    Ok(s.split("\n").skip(1).map(|s| s.to_string()).collect())
+}
+
+fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u16)>, volumes: Vec<(&str, &str)>) -> Result<()> {
+    let mut args = vec![
+        "run".to_string(), 
+        "-d".to_string(), 
+        "--name".to_string(), 
+        container_name.to_string(), 
+    ];
+
+
+    for (p1, p2) in ports {
+        args.push("-p".to_string());
+        args.push(format!("{}:{}", p1, p2));
+    }
+
+    for (v1, v2) in volumes {
+        args.push("-v".to_string());
+        args.push(format!("{}:{}", v1, v2));
+    }
+
+    args.push(img_name.to_string());
+
+    let cmd = Command::new("docker")
+        .args(&args)
+        .spawn()
+        .map_err(|e| anyhow!("{e}"))?;
+
+
     Ok(())
 }

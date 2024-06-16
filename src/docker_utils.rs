@@ -78,12 +78,12 @@ pub fn get_engine_status() -> Result<bool> {
     return Err(anyhow!("OS `{}` not supported.", OS));
 }
 
-fn install_docker() -> Result<()> {
+pub fn install_docker() -> Result<()> {
     // TODO: implement this function for the apt and dnf package managers (or in an agnostic manner).
     Ok(())
 }
 
-fn build_image(path: &str, img_name: &str) -> Result<()> {
+pub fn build_image(path: &str, img_name: &str) -> Result<()> {
     let cmd = Command::new("docker")
         .args(["build", "-t", img_name, "."])
         .current_dir(path)
@@ -92,7 +92,7 @@ fn build_image(path: &str, img_name: &str) -> Result<()> {
     Ok(())
 }
 
-fn list_images() -> Result<Vec<String>> {
+pub fn list_images() -> Result<Vec<String>> {
     // TODO: Test this function
     let cmd = Command::new("docker")
         .arg("images")
@@ -105,7 +105,7 @@ fn list_images() -> Result<Vec<String>> {
     Ok(s.split("\n").skip(1).map(|s| s.to_string()).collect())
 }
 
-fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u16)>, volumes: Vec<(&str, &str)>) -> Result<()> {
+pub fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u16)>, volumes: Vec<(&str, &str)>) -> Result<()> {
     let mut args = vec![
         "run".to_string(), 
         "-d".to_string(), 

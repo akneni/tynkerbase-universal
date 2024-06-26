@@ -108,3 +108,27 @@ pub mod compression_utils {
         Ok(())
     }
 }
+
+
+pub mod hash_utils {
+    use sha2::{Digest, Sha256, Sha384, Sha512};
+    use hex;
+
+    pub fn sha256(data: impl AsRef<[u8]>) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        hex::encode(hasher.finalize())
+    }
+
+    pub fn sha384(data: impl AsRef<[u8]>) -> String {
+        let mut hasher = Sha384::new();
+        hasher.update(data);
+        hex::encode(hasher.finalize())
+    }
+
+    pub fn sha512(data: impl AsRef<[u8]>) -> String {
+        let mut hasher = Sha512::new();
+        hasher.update(data);
+        hex::encode(hasher.finalize())
+    }
+}

@@ -2,6 +2,9 @@ use anyhow::{anyhow, Result};
 use rand::{Rng, thread_rng};
 use serde::{Serialize, Deserialize};
 use bincode;
+use sha2::{Digest, Sha512};
+use hex;
+
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum CompressionType {
@@ -34,9 +37,23 @@ impl BinaryPacket {
     }
 }
 
-pub fn gen_apikey() -> String {
+pub fn gen_apikey(pass_sha384: &str, salt: &str) -> String {
+    let mut combined_key = bincode::serialize(pass_sha384).unwrap();
+    let mut salt = bincode::serialize(salt).unwrap();
+    combined_key.append(&mut salt);
+
+    let mut hasher = Sha512::new();
+    hasher.update(combined_key);
+    let key = hasher.finalize();
+
+    let key = hex::encode(key);
+    let key = format!("tyb_key_{}", &key);
+    key
+}
+
+pub fn gen_salt() -> String {
     let mut rng = thread_rng();
-    let mut key = "tyb_key_".to_string();
+    let mut key = "tyb_salt_".to_string();
     let nums: Vec<u8> = vec![
         (48..58).collect::<Vec<u8>>(),
         (65..91).collect::<Vec<u8>>(),

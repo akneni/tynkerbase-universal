@@ -1,0 +1,1 @@
+pub const TYB_APIKEY_HTTP_HEADER: &str = "tyb-api-key";

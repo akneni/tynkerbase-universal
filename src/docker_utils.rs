@@ -109,7 +109,7 @@ pub fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u1
     let mut args = vec![
         "run".to_string(), 
         "-d".to_string(), 
-        "--name".to_string(), 
+        "--name".to_string(),
         container_name.to_string(), 
     ];
 
@@ -131,6 +131,19 @@ pub fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u1
         .spawn()
         .map_err(|e| anyhow!("{e}"))?;
 
+
+    Ok(())
+}
+
+pub fn halt_container(container_name: &str) -> Result<()> {
+    let status = Command::new("docker")
+        .args(&["stop", container_name])
+        .status()
+        .map_err(|e| anyhow!("Failed to launch docker command {e}"))?;
+
+    if !status.success() {
+        return Err(anyhow!("Failed to stop container: {}", container_name));
+    }
 
     Ok(())
 }

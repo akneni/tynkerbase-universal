@@ -4,6 +4,8 @@ use serde::{Serialize, Deserialize};
 use bincode;
 use sha2::{Digest, Sha512};
 use hex;
+use rpassword::read_password;
+use std::io::{self, Write};
 
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
@@ -63,6 +65,21 @@ pub fn gen_salt() -> String {
         key.push(nums[rng.gen_range(0..nums.len())] as char);
     }
     key
+}
+
+pub fn prompt(message: &str) -> String {
+    print!("{}", message);
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).expect("Failed to read line");
+    input.trim().to_string()
+}
+
+pub fn prompt_secret(message: &str) -> String {
+    print!("{}", message);
+    io::stdout().flush().unwrap();
+    let password = read_password().expect("Failed to read secret line");
+    password.trim().to_string()
 }
 
 pub mod compression_utils {

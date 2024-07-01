@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn apikey_generation() {
-        let key = crypt_utils::gen_apikey("keys", "saltd");
+        let key = crypt_utils::gen_apikey("keys", "salt");
         std::fs::write("./test-outputs/out.txt", &key).unwrap();
         assert!(key.starts_with("tyb_key_"));
         assert!(key.len() > 64);

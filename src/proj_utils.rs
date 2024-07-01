@@ -1,13 +1,11 @@
-#![allow(unused)]
 
+use crate::constants::LINUX_TYNKERBASE_PATH;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use std::env::consts::OS;
 use serde::{Serialize, Deserialize};
-
-pub const LINUX_TYNKERBASE_PATH: &str = "/tynkerbase-projects";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileData {

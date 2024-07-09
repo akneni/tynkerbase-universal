@@ -1,6 +1,7 @@
 pub mod docker_utils;
 pub mod proj_utils;
 pub mod crypt_utils;
+pub mod netwk_utils;
 pub mod constants;
 
 #[cfg(test)]

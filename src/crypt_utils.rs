@@ -161,14 +161,14 @@ pub mod aes_utils {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct AesMsg {
         pub data: Vec<u8>,
-        aad: Vec<u8>,
-        nonce: Option<Vec<u8>>,
+        pub aad: Vec<u8>,
+        pub nonce: Option<Vec<u8>>,
         pub is_encrypted: bool,
     }
     
     impl AesMsg {
         pub fn from_bytes(v: Vec<u8>) -> Self {
-            let aad = b"1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some suhi!)".to_vec();
+            let aad = b"1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some sushi!)".to_vec();
     
             AesMsg {
                 data: v,
@@ -180,7 +180,7 @@ pub mod aes_utils {
 
         pub fn from_str(s: &str) -> Self {
             let plaintext = s.as_bytes().to_vec();
-            let aad = b"1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some suhi!)".to_vec();
+            let aad = b"1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some sushi!)".to_vec();
     
             AesMsg {
                 data: plaintext,
@@ -192,7 +192,7 @@ pub mod aes_utils {
 
         pub fn extract_str(&self) -> Result<String> {
             if self.is_encrypted {
-                return Err(anyhow!("Error, message is still encypted"));
+                return Err(anyhow!("Error, message is still encrypted"));
             }
 
             let s = self.data.clone();

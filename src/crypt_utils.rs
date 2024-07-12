@@ -167,12 +167,11 @@ pub mod aes_utils {
     }
     
     impl AesMsg {
-        pub fn from_bytes(v: Vec<u8>) -> Self {
-            let aad = b"1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some sushi!)".to_vec();
-    
+        const AAD: &'static str = "1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some sushi!)";
+        pub fn from_bytes(v: Vec<u8>) -> Self {   
             AesMsg {
                 data: v,
-                aad: aad,
+                aad: Self::AAD.as_bytes().to_vec(),
                 nonce: None,
                 is_encrypted: false,
             }
@@ -180,11 +179,10 @@ pub mod aes_utils {
 
         pub fn from_str(s: &str) -> Self {
             let plaintext = s.as_bytes().to_vec();
-            let aad = b"1523 Elizabeth Ave #130, Charlotte, NC 28204 (take a break from coding, eat some sushi!)".to_vec();
-    
+   
             AesMsg {
                 data: plaintext,
-                aad: aad,
+                aad: Self::AAD.as_bytes().to_vec(),
                 nonce: None,
                 is_encrypted: false,
             }

@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use std::env::consts::OS;
 use serde::{Serialize, Deserialize};
+use ignore::WalkBuilder;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileData {
@@ -83,87 +84,26 @@ impl FileCollection {
         if parent_dir_path.is_file() {
             return Err(anyhow!("Argument must be a directory, not a file."));
         }
-        let it = fs::read_dir(parent_dir_path)
-            .map_err(|s| anyhow!("{}", s))?;
-    
-        for new_file in it {
-            if let Ok(new_file) = new_file {
-                let new_file_str = new_file.file_name().into_string().unwrap();
-                let full_path = parent_dir_path.join(&new_file_str);
-                let full_path_str = full_path
-                    .to_str()
-                    .unwrap()
-                    .to_string();
-    
-                if !Self::filter_ignored_files(ignore, &full_path) {
-                    continue;
-                }
-    
-                if new_file.path().is_dir() {
-                    let mut rec_res = match Self::load(&full_path_str, ignore) {
-                        Ok(r) => r,
-                        Err(e) => return Err(anyhow!("recursive call failed: {}", e)),
-                    };
-                    res.append(&mut rec_res);
-                    
-                }
-                else {
-                    let bytes = fs::read(&full_path_str).map_err(|e| anyhow!("{}", e))?;
-                    res.push(FileData::from(full_path_str, bytes));
+
+        let mut walker = WalkBuilder::new(parent_dir_path);
+        walker.git_ignore(false);
+
+        for s in ignore.iter() {
+            walker.add_ignore(s);
+        }
+
+        for path in walker.build() {
+            if let Ok(entry) = path {
+                if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                    let p = entry.path();
+                    let bin = fs::read(p).unwrap();
+                    let p_str = p.to_str().unwrap().to_string();
+                    res.push(FileData::from(p_str, bin));
                 }
             }
         }
-    
+
         Ok(res)
-    }
-
-    fn filter_ignored_files(ignore: &Vec<String>, path: &PathBuf) -> bool {
-        let is_dir = path.is_dir();
-        let full_path_str = path
-            .to_str()
-            .unwrap()
-            .to_string();
-        let path_str = full_path_str.split("/").last().unwrap().to_string();
-    
-        for ign in ignore.iter() {
-            if ign.starts_with("!") {
-                if &full_path_str == &ign[1..] {
-                    return true;
-                }
-            }
-        }
-    
-        for ign in ignore.iter() {
-            if &full_path_str == ign {
-                return false;
-            }
-            if is_dir {
-                if ign.ends_with("/") && path_str.starts_with(&ign[..ign.len()-1]) {
-                    return false;
-                }
-    
-            }
-            else {
-                if ign.starts_with("*.") && path_str.ends_with(&ign[1..]) {
-                    return false;
-                }
-                if ign.ends_with("*") && path_str.starts_with(&ign[..ign.len()-1]){
-                    return false; 
-                }
-                if ign.contains("/*") {
-                    let (path, file_ext) = ign.split_once("/*").unwrap();
-                    if full_path_str.starts_with(path) && path.ends_with(file_ext) {
-                        return false;
-                    }
-                }
-            }
-        }
-    
-        true
-    }
-
-    fn append(&mut self, other: &mut FileCollection) {
-        self.files.append(&mut other.files);
     }
 
     fn push(&mut self, elem: FileData) {

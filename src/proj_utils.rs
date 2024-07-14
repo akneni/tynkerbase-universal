@@ -8,10 +8,10 @@ use std::env::consts::OS;
 use serde::{Serialize, Deserialize};
 use ignore::{WalkBuilder, overrides::OverrideBuilder};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileData {
-    filename: String,
-    contents: Vec<u8>,
+    pub filename: String,
+    pub contents: Vec<u8>,
 }
 
 impl FileData {

@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use std::env::consts::OS;
 use serde::{Serialize, Deserialize};
-use ignore::WalkBuilder;
+use ignore::{WalkBuilder, overrides::OverrideBuilder};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileData {
@@ -78,8 +78,8 @@ impl FileCollection {
     }    
 
     pub fn load(parent_dir: &str, ignore: &Vec<String>) -> Result<Self> {
-        let mut res = FileCollection{files:vec![]};
-    
+        let mut res = FileCollection { files: vec![] };
+
         let parent_dir_path = Path::new(parent_dir);
         if parent_dir_path.is_file() {
             return Err(anyhow!("Argument must be a directory, not a file."));
@@ -88,9 +88,13 @@ impl FileCollection {
         let mut walker = WalkBuilder::new(parent_dir_path);
         walker.git_ignore(false);
 
+        let mut override_obj = OverrideBuilder::new(parent_dir);
+
         for s in ignore.iter() {
-            walker.add_ignore(s);
+            override_obj.add(&s).unwrap();
         }
+
+        walker.overrides(override_obj.build().unwrap());
 
         for path in walker.build() {
             if let Ok(entry) = path {

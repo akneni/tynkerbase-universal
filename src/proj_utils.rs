@@ -85,16 +85,7 @@ impl FileCollection {
             return Err(anyhow!("Argument must be a directory, not a file."));
         }
 
-        let mut walker = WalkBuilder::new(parent_dir_path);
-        walker.git_ignore(false);
-
-        let mut override_obj = OverrideBuilder::new(parent_dir);
-
-        for s in ignore.iter() {
-            override_obj.add(&s).unwrap();
-        }
-
-        walker.overrides(override_obj.build().unwrap());
+        let walker = WalkBuilder::new(parent_dir_path);
 
         for path in walker.build() {
             if let Ok(entry) = path {

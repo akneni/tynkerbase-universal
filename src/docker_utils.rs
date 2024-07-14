@@ -109,6 +109,21 @@ pub fn list_images() -> Result<Vec<String>> {
     Ok(s.split("\n").skip(1).map(|s| s.to_string()).collect())
 }
 
+pub fn list_containers() -> Result<Vec<String>> {
+    let cmd = Command::new("docker")
+        .args(["ps", "-a"])
+        .output()
+        .unwrap();
+    let containers = String::from_utf8(cmd.stdout)
+        .unwrap()
+        .split("\n")
+        .skip(1)
+        .map(|s| s.to_string())
+        .collect();
+
+    Ok(containers)
+}
+
 pub fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u16)>, volumes: Vec<(&str, &str)>) -> Result<()> {
     let mut args = vec![
         "run".to_string(), 
@@ -132,9 +147,14 @@ pub fn start_container(img_name: &str, container_name: &str, ports: Vec<(u16, u1
 
     let cmd = Command::new("docker")
         .args(&args)
-        .spawn()
+        .output()
         .map_err(|e| anyhow!("{e}"))?;
 
+    if !cmd.status.success() {
+        let err = String::from_utf8(cmd.stderr)
+            .unwrap_or("Unable to extract stderr".to_string());
+        return Err(anyhow!("Failed to spawn container `{}`: \n{}", container_name, err));
+    }
 
     Ok(())
 }

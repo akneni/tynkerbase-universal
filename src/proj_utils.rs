@@ -36,7 +36,7 @@ impl FileData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileCollection {
-    files: Vec<FileData>
+    pub files: Vec<FileData>
 }
 
 impl FileCollection {

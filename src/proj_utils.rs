@@ -22,7 +22,7 @@ impl FileData {
         }
     }
 
-    pub fn mem_size(&self) -> usize {
+    pub fn sizeof(&self) -> usize {
         let res = 4*64 + self.filename.len() + self.contents.len();
         return res;
     } 
@@ -101,9 +101,14 @@ impl FileCollection {
         Ok(res)
     }
 
+    pub fn sizeof(&self) -> usize {
+        self.files.iter().map(|fd| fd.sizeof()).sum()
+    }
+
     fn push(&mut self, elem: FileData) {
         self.files.push(elem);
     }
+
 }
 
 

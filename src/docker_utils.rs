@@ -1,6 +1,4 @@
-#![allow(unused)]
-
-use std::{env::current_dir, process::Command};
+use std::process::Command;
 use std::env::consts::OS;
 use anyhow::{anyhow, Result};
 
@@ -87,8 +85,14 @@ pub fn build_image(path: &str, img_name: &str) -> Result<()> {
     let cmd = Command::new("docker")
         .args(["build", "-t", img_name, "."])
         .current_dir(path)
-        .output();    
+        .output()
+        .map_err(|e| anyhow!("Error building docker image => {}", e))?;
 
+    if !cmd.status.success() {
+        let err = String::from_utf8(cmd.stderr)
+            .unwrap_or("Unable to extract stderr".to_string());
+        return Err(anyhow!("docker build command failed: \n{}", err));
+    }
     Ok(())
 }
 

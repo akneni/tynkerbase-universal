@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -6,6 +8,18 @@ pub struct Node {
     pub name: String,
     pub email: String,
     pub addr: String,
+}
+
+impl Node {
+    pub fn to_hashmap(&self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.insert("node_id".to_string(), self.node_id.clone()).unwrap();
+        map.insert("name".to_string(), self.name.clone()).unwrap();
+        map.insert("email".to_string(), self.email.clone()).unwrap();
+        map.insert("addr".to_string(), self.addr.clone()).unwrap();
+
+        map
+    }
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

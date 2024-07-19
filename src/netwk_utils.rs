@@ -13,10 +13,10 @@ pub struct Node {
 impl Node {
     pub fn to_hashmap(&self) -> HashMap<String, String> {
         let mut map = HashMap::new();
-        map.insert("node_id".to_string(), self.node_id.clone()).unwrap();
-        map.insert("name".to_string(), self.name.clone()).unwrap();
-        map.insert("email".to_string(), self.email.clone()).unwrap();
-        map.insert("addr".to_string(), self.addr.clone()).unwrap();
+        map.insert("node_id".to_string(), self.node_id.clone());
+        map.insert("name".to_string(), self.name.clone());
+        map.insert("email".to_string(), self.email.clone());
+        map.insert("addr".to_string(), self.addr.clone());
 
         map
     }

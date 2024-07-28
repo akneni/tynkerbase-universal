@@ -57,3 +57,13 @@ pub struct ProjConfig {
     pub ignore: Vec<String>,
 }     
 
+impl ProjConfig {
+    /// Formats the name of the project to adhere to the docker naming conventions.
+    /// Returns `true` if the name is already in the correct format and `false` if it had to be changed.
+    pub fn parse_name(&mut self) -> bool {
+        let parsed_name = self.proj_name.replace(" ", "_").to_lowercase();
+        let res = parsed_name == self.proj_name;
+        self.proj_name = parsed_name;
+        res
+    }
+}
